@@ -31,11 +31,6 @@ initial(board([['-','-','-','-','-','-'],
 show(board(X)):- write('  A B C D E F G'), nl,
 		 iShow(X,6).
 
-show([Board | RestBoard]):-
-	show(Board),
-	show(RestBoard).
-
-
 %show(X,N) shows lines [N .. 1] of board X
 iShow(_,0).
 iShow(X,N):- showLine(X,N,X2),
@@ -70,15 +65,14 @@ nextMove('X',X):- repeat, %repeats in case a column is full
 		  readColumn(C),
 		  play('X',C,X,X2), !,
 		  show(X2),
-		  nextMove('O',X2).
-nextMove('O',X):- writeln('BOOOBOO'),
-	machine(X,X2),!,
+		  nextMove('O',X2). 
+nextMove('O',X):- machine('O','X',X,X2),
 		  show(X2),
 		  nextMove('X',X2).
 
 %play(X,P,T,T2) is satisfied if T2 is the board T after player X moves in column P
 play(X,P,board(T),board(T2)):- append(I,[C|F],T),
-			       length(I,P),
+			       length(I,P), 
 		               playColumn(X,C,C2),
 			       append(I,[C2|F],T2).
 
@@ -114,7 +108,7 @@ wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), % check if 4 connected columns e
 		   append(I4,[X|_],C4),
 		   length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
 		   M2 is M1-1, M3 is M2-1, M4 is M3-1. %...and every piece is within the same diagonal /
-
+						
 %full(T) is satisfied if there isn't any free spot ('-')
 full(board(T)):- \+ (append(_,[C|_],T),
 		 append(_,['-'|_],C)).
@@ -149,96 +143,51 @@ col(6).
 %%%%%%%%%%%%%%%%%%
 %%%%% MACHINE %%%%
 %%%%%%%%%%%%%%%%%%
-%
-% source : https://github.com/jaunerc/minimax-prolog/blob/master/minimax.pl
-% compare_moves(+MinMax, +MoveA, +ValueA, +MoveB, +ValueB, -BetterMove, -BetterValue)
-% Chooses the move with the higher value.
-compare_moves('O', MoveA, ValueA, _, ValueB, MoveA, ValueA) :-
-	ValueA >= ValueB.
-compare_moves('O', _, ValueA, MoveB, ValueB, MoveB, ValueB) :-
-	ValueA < ValueB.
-compare_moves('X', MoveA, ValueA, _, ValueB, MoveA, ValueA) :-
-	ValueA =< ValueB.
-compare_moves('X', _, ValueA, MoveB, ValueB, MoveB, ValueB) :-
-	ValueA > ValueB.
+%machine(R,O,T,T2) Let R be the machine piece, O the opponent's piece and T the board game. Then T2 is board T after the machine movement
+% win if possible
+machine(R,_,T,T2):- iMachine(R,T,C,T2),
+		    nl, write('machine: '),
+		    associateChar(L,C),
+		    write(L),
+		    nl,!.
+% otherwise, if machine can't win within a move, play a move that doesn't allow opponent O to win and that would allow us to obtain a connected 4
+machine(R,O,T,T2):- findall((Col,TA), (col(Col), play(R,Col,T,TA),\+ iMachine(O,TA,_,_), goodMove(R,Col,T)), [(C,T2)|_]),
+		    nl, write('machine: '),
+		    associateChar(L,C),
+		    write(L),
+		    nl,!.
+% otherwise play a move that doesn't allow opponent O to win
+machine(R,O,T,T2):- findall((Col,TA), (col(Col), play(R,Col,T,TA),\+ iMachine(O,TA,_,_)), [(C,T2)|_]),
+		    nl, write('machine: '),
+		    associateChar(L,C),
+		    write(L), nl,
+		    write('-'),!.
+% otherwise play a move intercepting one of the future winning options of opponent O
+machine(R,O,T,T2):- iMachine(O,T,C,_),
+		    play(R,C,T,T2),
+		    nl, write('machine: '),
+		    associateChar(L,C),
+		    write(L), nl.
+% otherwise play wherever
+machine(R,_,T,T2):- col(C),
+		    play(R,C,T,T2),
+		    nl, write('machine: '),
+		    associateChar(L,C),
+		    write(L), nl.
+				  
+%iMachine(R,T,C,T2) is satisfied if player R can play in column C of board T and obtain a winning board T2
+iMachine(R,T,C,T2):- findall((Col,TA), (col(Col), play(R,Col,T,TA),wins(R,TA)),[(C,T2)|_]).
 
-% eval_board(+Board, -Value)
-% Evaluates the score of the Board.
-%
-eval_board(Board, Value) :-
-    random(L),
-    Value is L,!.
+%We consider that a good move is one allowing us to win in a column. Further improvements: rows and diagonals.
+goodMove(R,Col,board(T)):- append(I,[C|_],T),
+			   length(I,Col),
+			   maxConnected(R,C,MaxConn),
+			   MaxConn >= 4.						
 
-
-
-all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
-
-print_liste([]).
-print_liste([A|Z]) :-
-    show(A), nl, print_liste(Z).
-
-
-
-% change_max_min(+MinOrMax, TheOther)
-% Changes the MinMax atom.
-change_player('O', 'X').
-change_player('X', 'O').
-
-% best_move(+MinMax, +AllMoves, -BestMove, -BestValue)
-% Chooses the next move.
-best_move('X', [], [], -2,_).
-best_move('O', [], [], 2,_).
-%best_move(_, _, _, _,0).
-
-
-best_move(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-	
-	print('Move 1:'),
-	%show(Move),
-	%print(RestMoves),
-	nl,	nl,
-	eval_board(Move, Value),
-	best_move(Player, RestMoves, CurrentBestM, CurrentBestV,CurrentDepth),
-	compare_moves(Player, Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
-best_move(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
-	print('Move 2'),
-	nl,
-	best_move(Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
-	change_player(Player, Other),
-	NewCurrentDepth is CurrentDepth - 1,
-	print(NewCurrentDepth),
-	print(' : '),
-	minimax(Other, Move, _, BottomBestV, NewCurrentDepth),
-	print('Best Val :'),
-	print(BottomBestV),
-	nl,
-	compare_moves(Player, Move, BottomBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
-
-% minimax_step(+MinMax, +Board, -BestMove, -BestValue)
-% Chooses the best possible move for the current board.
-%minimax(_, _, _, _, 0):-fail.
-
-minimax(Player, Board, BestMove, BestValue, MaxDepth) :-
-	(MaxDepth < 0 -> 
-		writeln('X is negative.  That\'s weird!  Failing now.'),
-		!;
-		write_ln('Ba en vrai ca passe')
-		),
-	print('Minimax '),
-	print(MaxDepth),
-	
-	nl,
-	all_possible_moves(Player, Board, AllMoves),
-	%show(AllMoves),
-    best_move(Player, AllMoves, BestMove, BestValue,MaxDepth).
-
-% minimax(+Board, -BestMove)
-% Matches the next move based on the current board.
-machine(Board, BestMove) :-
-	write_ln('Ba ca appelle machine quoi'),
-	
-	minimax('O', Board, BestMove, _,2),
-	writeln('BestMove :'),
-	show(BestMove).
-
-
-
+% maxConnected(R,C,MaxConn) MaxConn is the maximum number of connected pieces that player R has/could have in column C
+maxConnected(_,[],0).
+maxConnected(R,[X|_],0):- X\=R.
+maxConnected(R,['-'|X],N):- maxConnected(R,X,Ns),
+			    N is Ns+1.
+maxConnected(R,[R|X],N):- maxConnected(R,X,Ns),
+			  N is Ns+1.
