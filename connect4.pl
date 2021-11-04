@@ -73,6 +73,7 @@ nextMove('X',X):- repeat, %repeats in case a column is full
 		  nextMove('O',X2).
 nextMove('O',X):- writeln('BOOOBOO'),
 	machine(X,X2),!,
+	writeln('BABA'),
 		  show(X2),
 		  nextMove('X',X2).
 
@@ -186,21 +187,24 @@ change_player('X', 'O').
 
 % best_move(+MinMax, +AllMoves, -BestMove, -BestValue)
 % Chooses the next move.
-best_move('X', [], _, _,_).
-best_move('O', [], _, _,_).
-best_move(_, [Move | []], Move, Value, _) :-
+best_move('X', [], _,_,_).
+best_move('O', [], _,_,_).
+best_move(_, [Move | []], Move, Value) :-
 	eval_board(Move, Value).
 
-best_move(Player, [Move | RestMoves], BestMove, BestValue) :-
+best_move(Player, [Move | RestMoves],BestMove, BestValue) :-
+	/*
 	print('Move 1:'),
 	nl,
 	show(Move),
-	nl,
+	nl,*/
+	%show(Move),
 	eval_board(Move, Value),
 	best_move(Player, RestMoves, CurrentBestM, CurrentBestV),
-	compare_moves(Player, Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue),
-	print(BestValue),
-	nl.
+	compare_moves(Player, Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
+	%nl.
+
+
 
 /*best_move(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	print('Move 2'),
@@ -217,33 +221,62 @@ best_move(Player, [Move | RestMoves], BestMove, BestValue) :-
 	nl,
 	compare_moves(Player, Move, BottomBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).*/
 
-minimax(_, _, _, _, -1).
 
-minimax(Player, AllMoves, BestMove, BestValue, 0) :-
-	best_move(Player, AllMoves, BestMove, BestValue).
 
-minimax(Player, [Move | []], BestMove, BestValue, CurrentDepth) :-
+
+
+%minimax(_,_,_,_,-1).
+
+minimax(Player, AllMoves, BestMove, BestValue, 1) :-
+	write_ln('normalement ca remonte'),
+	%show(AllMoves),
+	best_move(Player, AllMoves, BestMove,BestValue).
+	
+
+
+minimax(Player, [Move | []], Move, BestValue, CurrentDepth) :-
+	writeln('Quand c le dernier'),
+	
+	CurrentDepth > 1,
+	%writeln('Le dernier move'),
 	change_player(Player, Other),
 	NewDepth is CurrentDepth - 1,
 	all_possible_moves(Other, Move, AllDepthMoves),
-	minimax(Other, AllDepthMoves, BestMove, BestValue, NewDepth).
+	minimax(Other, AllDepthMoves, _, BestValue, NewDepth).
+	
 
 minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	CurrentDepth > 1,
+	writeln(CurrentDepth),
+	%writeln('Le truc tu connais > 0'),
+	%writeln(Player),
+	%show(Move),
+	%print('Current Depth :'),
+	%writeln(CurrentDepth),
+	
 	minimax(Player, RestMoves, CurrentBestMove, CurrentBaseValue, CurrentDepth),
+	writeln(CurrentBaseValue),
 	change_player(Player, Other),
 	NewDepth is CurrentDepth - 1,
 	all_possible_moves(Other, Move, AllDepthMoves),
-	minimax(Other, AllDepthMoves, Move, Value, NewDepth),
-	compare_moves(.
+	print('New Depth :'),
+	print(NewDepth),
+	nl,
+	(NewDepth = 1, minimax(Other, AllDepthMoves, Move, Value, 1);true).
+	%compare_moves(Player,Move,Value,CurrentBestMove,CurrentBaseValue,BestMove, BestValue).
+	
+
 
 % minimax(+Board, -BestMove)
 % Matches the next move based on the current board.
 machine(Board, BestMove) :-
-	write_ln('Ba ca appelle machine quoi'),
+	
         all_possible_moves('O', Board, AllMoves),
-	minimax('O', AllMoves, BestMove, BestValue, 2),
-	writeln('BestMove :'),
-	show(BestMove),
-	write_ln(BestValue).
+		write_ln('Ba ca appelle machine quoi'),
+		minimax('O', AllMoves, BestMove, BestValue, 3),!,
+	writeln('ALLLLLLLLLLLLLLLLLLLLLLLLLLLLL').
+	%writeln('BestMove :').
+	%show(BestMove),
+	%write_ln(BestValue).
 
 
