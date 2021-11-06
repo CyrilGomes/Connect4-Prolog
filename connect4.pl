@@ -71,7 +71,7 @@ nextMove('X',X):- repeat, %repeats in case a column is full
 		  play('X',C,X,X2), !,
 		  show(X2),
 		  nextMove('O',X2).
-nextMove('O',X):- writeln('BOOOBOO'),
+nextMove('O',X):-
 	machine(X,X2),!,
 		  show(X2),
 		  nextMove('X',X2).
@@ -153,13 +153,14 @@ col(6).
 % source : https://github.com/jaunerc/minimax-prolog/blob/master/minimax.pl
 % CompareMoves(+MinMax, +MoveA, +ValueA, +MoveB, +ValueB, -BetterMove, -BetterValue)
 % Chooses the move with the higher value.
-compare_moves('O', MoveA, ValueA, _, ValueB, MoveA, ValueA) :-
+
+compare_moves('O', MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
 	ValueA >= ValueB.
-compare_moves('O', _, ValueA, MoveB, ValueB, MoveB, ValueB) :-
+compare_moves('O', MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
 	ValueA < ValueB.
-compare_moves('X', MoveA, ValueA, _, ValueB, MoveA, ValueA) :-
+compare_moves('X', MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
 	ValueA =< ValueB.
-compare_moves('X', _, ValueA, MoveB, ValueB, MoveB, ValueB) :-
+compare_moves('X', MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
 	ValueA > ValueB.
 
 % change_max_min(+MinOrMax, TheOther)
@@ -174,27 +175,58 @@ all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 % -----------------------------------------------------------------------
 
 % Adaptation maison de https://github.com/jaunerc/minimax-prolog/blob/master/minimax.pl
-eval_board(Board, Value) :-
-    random(L),
-    Value is L,!.
+eval_board(Player,Board, Value) :-
+	(wins(Player,Board),
+	Value is 1
+	%show(Board)
+	; 	
+	change_player(Player,Other),
+	(wins(Other,Board),
+	 Value is -1
+	; Value is 0)
+	).
+
+
 
 print_liste([]).
 print_liste([A|Z]) :-
     show(A), nl, print_liste(Z).
 
 best_move(_, [], _, _).
-best_move(_, [Move | []], Move, Value) :-
-	write_ln("J'ai bien initialisé"),
-	show(Move),
-	eval_board(Move, Value).
+
+
+
+best_move(Player, [Move | []], Move, Value) :-
+	%write_ln("J'ai bien initialisï¿½"),
+	%show(Move),
+	eval_board(Player,Move, Value).
 
 best_move(Player, [Move | RestMoves], BestMove, BestValue) :-
-	eval_board(Move, Value),
+	eval_board(Player,Move, Value),
 	best_move(Player, RestMoves, CurrentBestM, CurrentBestV),
-	compare_moves(Player, Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
+	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
+
+
+
 
 minimax(Player, AllMoves, BestMove, BestValue, 1) :-
 	best_move(Player, AllMoves, BestMove, BestValue).
+
+
+minimax('X', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	wins('X',Move),
+	BestMove = Move,
+	BestValue is -1,
+	show(Move),
+	print('X'),
+	writeln(' Wins !').
+minimax('O', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	wins('O',Move),
+	BestMove = Move,
+	BestValue is 1,
+	show(Move),
+	print('O'),
+	writeln(' Wins !').
 
 minimax(Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
@@ -208,16 +240,15 @@ minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
 	minimax(Other, AllMoves, _, PossibleBestV, NewDepth),
-	compare_moves(Other, Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
+	compare_moves(Player,Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
 
 % minimax(+Board, -BestMove)
 % Matches the next move based on the current board.
 machine(Board, BestMove) :-
-	write_ln('Ba ca appelle machine quoi'),
         all_possible_moves('O', Board, AllMoves),
-	minimax('O', AllMoves, BestMove, BestValue, 2),
-	writeln('BestMove :'),
-	show(BestMove),
-	write_ln(BestValue).
+	minimax('O', AllMoves, BestMove, BestValue, 5).
+	%writeln('BestMove :'),
+	%show(BestMove),
+	%write_ln(BestValue).
 
 
