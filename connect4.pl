@@ -174,12 +174,90 @@ all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 % ICI C'EST DU FAIT MAISON
 % -----------------------------------------------------------------------
 
+% Numéros de lignes fonctionnelles (au-delà, ou en-dessous, valeur illégale)
+line(0).
+line(1).
+line(2).
+line(3).
+line(4).
+line(5).
+
+% Retourne 1 si la case (X,Y) appartient à Player, 0 si c'est le joueur adverse, -1 sinon
+check_player(Player, Board, X, Y, Res) :-
+	col(X),
+	line(Y),
+	nth0(Y, Board, Line),
+	nth0(X, Line, Square),
+	check_player(Player, Square, Res).
+check_player('O', 'X', 0).
+check_player('X', 'O', 0).
+check_player('X', 'X', 1).
+check_player('O', 'O', 1).
+check_player(_, '-', 0).
+
+% Vérification de blocage d'une chaîne par l'adversaire (Score = 0)
+diagonal_chain_1(Player, Board, X, Y) :-
+	check_player(Player, Board, X+2, Y-2, 0),
+	check_player(Player, Board, X-2, Y+2, 0),
+	fail.
+
+% Vérification de la présence d'une diagonale décroissante et son score associé (Score = nb de cases adjacentes)
+diagonal_chain_1(Player, Board, X, Y, Score) :-
+	check_player(Player, Board, X, Y, S1),
+	check_player(Player, Board, X+1, Y-1, S2),
+	check_player(Player, Board, X-1, Y+1, S3),
+	Score is S1 + S2 + S3.
+
+diagonal_chain_2(Player, Board, X, Y) :-
+	check_player(Player, Board, X+2, Y+2, 0),
+	check_player(Player, Board, X-2, Y-2, 0),
+	fail.
+
+diagonal_chain_2(Player, Board, X, Y, Score) :-
+	check_player(Player, Board, X, Y, S1),
+	check_player(Player, Board, X+1, Y+1, S2),
+	check_player(Player, Board, X-1, Y-1, S3),
+	Score is S1 + S2 + S3.
+
+horizontal_chain(Player, Board, X, Y) :-
+	check_player(Player, Board, X+2, Y, 0),
+	check_player(Player, Board, X-2, Y, 0),
+	fail.
+
+horizontal_chain(Player, Board, X, Y, Score) :-
+	check_player(Player, Board, X, Y, S1),
+	check_player(Player, Board, X+1, Y, S2),
+	check_player(Player, Board, X-1, Y, S3),
+	Score is S1 + S2 + S3.
+
+vertical_chain(Player, Board, X, Y) :-
+	check_player(Player, Board, X, Y+2, 0),
+	check_player(Player, Board, X, Y-2, 0),
+	fail.
+
+vertical_chain(Player, Board, X, Y, Score) :-
+	check_player(Player, Board, X, Y, S1),
+	check_player(Player, Board, X, Y+1, S2),
+	check_player(Player, Board, X, Y-1, S3),
+	Score is S1 + S2 + S3.
+
+% Pour l'instant: Dès qu'une chaîne est trouvé dans chacun des sens, on retourne le nb max de cases adjacentes appartenants à Player
+% SUGGESTION (peut-être lourde): Récupérer TOUTES les occurences de ces chaînes (avec findall) pour pondérer le score sur le nb de chaînes
+% OU ALORS (attention suggestion à la Thibaud à minuit): ON CHERCHE UNIQUEMENT LA PREMIERE (ou toutes les) CHAÎNE(S) AVEC 3 CASES ADJACENTES
+best_chain(Player, Board, X, Y, BestChain) :-
+	diagonal_chain_1(Player, Board, X, Y, C1),
+	diagonal_chain_2(Player, Board, X, Y, C2),
+	horizontal_chain(Player, Board, X, Y, C3),
+	vertical_chain(Player, Board, X, Y, C4),
+	max_list([C1, C2, C3, C4], BestChain).
+	
+
 % Adaptation maison de https://github.com/jaunerc/minimax-prolog/blob/master/minimax.pl
 eval_board(Player,Board, Value) :-
 	(wins(Player,Board),
 	Value is 1
 	%show(Board)
-	; 	
+	;
 	change_player(Player,Other),
 	(wins(Other,Board),
 	 Value is -1
@@ -194,18 +272,13 @@ print_liste([A|Z]) :-
 
 best_move(_, [], _, _).
 
-
-
 best_move(Player, [Move | []], Move, Value) :-
-	%write_ln("J'ai bien initialis�"),
-	%show(Move),
 	eval_board(Player,Move, Value).
 
 best_move(Player, [Move | RestMoves], BestMove, BestValue) :-
 	eval_board(Player,Move, Value),
 	best_move(Player, RestMoves, CurrentBestM, CurrentBestV),
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
-
 
 
 
@@ -216,17 +289,17 @@ minimax(Player, AllMoves, BestMove, BestValue, 1) :-
 minimax('X', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	wins('X',Move),
 	BestMove = Move,
-	BestValue is -1,
-	show(Move),
-	print('X'),
-	writeln(' Wins !').
+	BestValue is -1.
+	%show(Move),
+	%print('X'),
+	%writeln(' Wins !').
 minimax('O', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	wins('O',Move),
 	BestMove = Move,
-	BestValue is 1,
-	show(Move),
-	print('O'),
-	writeln(' Wins !').
+	BestValue is 1.
+	%show(Move),
+	%print('O'),
+	%writeln(' Wins !').
 
 minimax(Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
