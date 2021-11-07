@@ -183,7 +183,7 @@ line(4).
 line(5).
 
 % Retourne 1 si la case (X,Y) appartient à Player, 0 si c'est le joueur adverse, -1 sinon
-check_player(Player, Board, X, Y, Res) :-
+check_player(Player, board(Board), X, Y, Res) :-
 	col(X),
 	line(Y),
 	nth0(Y, Board, Line),
@@ -195,56 +195,80 @@ check_player('X', 'X', 1).
 check_player('O', 'O', 1).
 check_player(_, '-', 0).
 
+
+
 % Vérification de blocage d'une chaîne par l'adversaire (Score = 0)
 diagonal_chain_1(Player, Board, X, Y) :-
-	check_player(Player, Board, X+2, Y-2, 0),
-	check_player(Player, Board, X-2, Y+2, 0),
-	fail.
-
+	%show(Board),
+	Xeval is X+2,
+	Yeval is Y-2,
+	check_player(Player, Board, Xeval, Yeval, 0),
+	Xeval2 is X-2,
+	Yeval2 is Y+2,
+	check_player(Player, Board,Xeval2, Yeval22, 0).
 % Vérification de la présence d'une diagonale décroissante et son score associé (Score = nb de cases adjacentes)
 diagonal_chain_1(Player, Board, X, Y, Score) :-
 	check_player(Player, Board, X, Y, S1),
-	check_player(Player, Board, X+1, Y-1, S2),
-	check_player(Player, Board, X-1, Y+1, S3),
+	Xeval is X+1,
+	Yeval is Y-1,
+	check_player(Player, Board,Xeval, Yeval, S2),
+	Xeval2 is X-1,
+	Yeval2 is Y+1,
+	check_player(Player, Board,Xeval2, Yeval2, S3),
 	Score is S1 + S2 + S3.
 
 diagonal_chain_2(Player, Board, X, Y) :-
-	check_player(Player, Board, X+2, Y+2, 0),
-	check_player(Player, Board, X-2, Y-2, 0),
-	fail.
+	Xeval is X+2,
+	Yeval is Y+2,
+	check_player(Player, Board,Xeval, Yeval, 0),
+	Xeval2 is X-2,
+	Yeval2 is Y-2,
+	check_player(Player, Board, Xeval2, Yeval2, 0).
 
 diagonal_chain_2(Player, Board, X, Y, Score) :-
 	check_player(Player, Board, X, Y, S1),
-	check_player(Player, Board, X+1, Y+1, S2),
-	check_player(Player, Board, X-1, Y-1, S3),
+	Xeval is X+1,
+	Yeval is Y+1,
+	check_player(Player, Board, Xeval, Yeval, S2),
+	Xeval2 is X-1,
+	Yeval2 is Y-1,
+	check_player(Player, Board, Xeval2, Yeval2, S3),
 	Score is S1 + S2 + S3.
 
 horizontal_chain(Player, Board, X, Y) :-
-	check_player(Player, Board, X+2, Y, 0),
-	check_player(Player, Board, X-2, Y, 0),
-	fail.
+	Xeval is X+2,
+	check_player(Player, Board, Xeval, Y, 0),
+	Xeval2 is X-2,
+	check_player(Player, Board, Xeval2, Y, 0).
 
 horizontal_chain(Player, Board, X, Y, Score) :-
 	check_player(Player, Board, X, Y, S1),
-	check_player(Player, Board, X+1, Y, S2),
-	check_player(Player, Board, X-1, Y, S3),
+	Xeval is X+1,
+	check_player(Player, Board, Xeval, Y, S2),
+	Xeval2 is X-1,
+	check_player(Player, Board,Xeval2, Y, S3),
 	Score is S1 + S2 + S3.
 
 vertical_chain(Player, Board, X, Y) :-
-	check_player(Player, Board, X, Y+2, 0),
-	check_player(Player, Board, X, Y-2, 0),
-	fail.
+	Yeval is Y+2,
+	check_player(Player, Board, X, Yeval, 0),
+	Yeval2 is Y-2,
+	check_player(Player, Board, X, Yeval2, 0).
 
 vertical_chain(Player, Board, X, Y, Score) :-
 	check_player(Player, Board, X, Y, S1),
-	check_player(Player, Board, X, Y+1, S2),
-	check_player(Player, Board, X, Y-1, S3),
+	Yeval is Y+1,
+	check_player(Player, Board, X, Yeval, S2),
+	Yeval2 is Y-1,
+	check_player(Player, Board, X, Yeval2, S3),
 	Score is S1 + S2 + S3.
 
 % Pour l'instant: Dès qu'une chaîne est trouvé dans chacun des sens, on retourne le nb max de cases adjacentes appartenants à Player
 % SUGGESTION (peut-être lourde): Récupérer TOUTES les occurences de ces chaînes (avec findall) pour pondérer le score sur le nb de chaînes
 % OU ALORS (attention suggestion à la Thibaud à minuit): ON CHERCHE UNIQUEMENT LA PREMIERE (ou toutes les) CHAÎNE(S) AVEC 3 CASES ADJACENTES
 best_chain(Player, Board, X, Y, BestChain) :-
+	%check_player(Player, Board, X, Y, 1),
+	%trace(),
 	diagonal_chain_1(Player, Board, X, Y, C1),
 	diagonal_chain_2(Player, Board, X, Y, C2),
 	horizontal_chain(Player, Board, X, Y, C3),
@@ -253,6 +277,7 @@ best_chain(Player, Board, X, Y, BestChain) :-
 	
 
 % Adaptation maison de https://github.com/jaunerc/minimax-prolog/blob/master/minimax.pl
+/*
 eval_board(Player,Board, Value) :-
 	(wins(Player,Board),
 	Value is 1
@@ -262,9 +287,19 @@ eval_board(Player,Board, Value) :-
 	(wins(Other,Board),
 	 Value is -1
 	; Value is 0)
-	).
+	).*/
 
+eval_board(Player,Board, Value) :-
+	show(Board),
+	findall([X,Y], check_player(Player,Board,X,Y,1), G),
+	
+	Values is 1,
+	%print(Value + ' : '),	
+	writeln(G).
+	
+	
 
+	
 
 print_liste([]).
 print_liste([A|Z]) :-
@@ -274,11 +309,14 @@ best_move(_, [], _, _).
 
 best_move(Player, [Move | []], Move, Value) :-
 	eval_board(Player,Move, Value).
+	%writeln(Value).
 
 best_move(Player, [Move | RestMoves], BestMove, BestValue) :-
+	%trace(),
 	eval_board(Player,Move, Value),
 	best_move(Player, RestMoves, CurrentBestM, CurrentBestV),
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
+	
 
 
 
@@ -286,21 +324,22 @@ minimax(Player, AllMoves, BestMove, BestValue, 1) :-
 	best_move(Player, AllMoves, BestMove, BestValue).
 
 
+/*
 minimax('X', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	wins('X',Move),
 	BestMove = Move,
-	BestValue is -1.
+	BestValue is -100000.
 	%show(Move),
 	%print('X'),
 	%writeln(' Wins !').
 minimax('O', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	wins('O',Move),
 	BestMove = Move,
-	BestValue is 1.
+	BestValue is 100000.
 	%show(Move),
 	%print('O'),
 	%writeln(' Wins !').
-
+*/
 minimax(Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
@@ -319,9 +358,10 @@ minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 % Matches the next move based on the current board.
 machine(Board, BestMove) :-
         all_possible_moves('O', Board, AllMoves),
-	minimax('O', AllMoves, BestMove, BestValue, 5).
-	%writeln('BestMove :'),
+	minimax('O', AllMoves, BestMove, BestValue, 2),
+
+	writeln('Value  :'),
 	%show(BestMove),
-	%write_ln(BestValue).
+	write_ln(BestValue).
 
 
