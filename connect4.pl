@@ -171,6 +171,89 @@ change_player('X', 'O').
 all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 
 % -----------------------------------------------------------------------
+% ICI C'EST DU CODE RECYCLE D'AU-DESSUS (EN PARTICULIER LA FONCTION "WINS")
+% -----------------------------------------------------------------------
+
+% -------------- VERTICAL CHAIN -----------------------------------------
+vertical_chain_full(X,board(T), 0):- 
+	append(_, [C|_], T),
+	change_player(X, Y),
+	append(_,[Y,X,X,X,Y|_],C).
+vertical_chain_full(X,board(T), 0):- 
+	append(_, [C|_], T),
+	change_player(X, Y),
+	[X,X,X,Y|[_|_]] = C.
+vertical_chain_full(X,board(T), 0):- 
+	append(_, [C|_], T),
+	change_player(X, Y),
+	append(_,[Y,X,X,X|[]],C).
+vertical_chain_full(X,board(T), 0):- 
+	append(_, [C|_], T),
+	change_player(X, Y),
+	append(_,[Y,X,X,Y|_],C).
+
+vertical_chain_full(X,board(T), 4):- append(_, [C|_], T),
+	append(_,[X,X,X,X|_],C).
+vertical_chain_full(X,board(T), 3):- append(_, [C|_], T),
+	append(_,[X,X,X|_],C).
+vertical_chain_full(X,board(T), 2):- append(_, [C|_], T),
+	append(_,[X,X|_],C).
+
+horizontal_chain_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,[X|_],C4),
+	length(I1,M), length(I2,M), length(I3,M), length(I4,M).
+horizontal_chain_full(X,board(T), 3):- append(_,[C1,C2,C3|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	length(I1,M), length(I2,M), length(I3,M).
+horizontal_chain_full(X,board(T), 2):- append(_,[C1,C2|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	length(I1,M), length(I2,M).
+
+diagonal_chain_1_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,[X|_],C4),
+	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
+	M2 is M1+1, M3 is M2+1, M4 is M3+1.
+diagonal_chain_1_full(X,board(T), 3):- append(_,[C1,C2,C3|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	length(I1,M1), length(I2,M2), length(I3,M3),
+	M2 is M1+1, M3 is M2+1.
+diagonal_chain_1_full(X,board(T), 2):- append(_,[C1,C2|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	length(I1,M1), length(I2,M2),
+	M2 is M1+1.
+
+diagonal_chain_2_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
+		   append(I1,[X|_],C1),
+		   append(I2,[X|_],C2),
+		   append(I3,[X|_],C3),
+		   append(I4,[X|_],C4),
+		   length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
+		   M2 is M1-1, M3 is M2-1, M4 is M3-1.
+diagonal_chain_2_full(X,board(T), 3):- append(_,[C1,C2,C3|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	length(I1,M1), length(I2,M2), length(I3,M3),
+	M2 is M1-1, M3 is M2-1.
+diagonal_chain_2_full(X,board(T), 2):- append(_,[C1,C2|_],T),
+	append(I1,[X|_],C1),
+	append(I2,[X|_],C2),
+	length(I1,M1), length(I2,M2),
+	M2 is M1-1.
+
+% -----------------------------------------------------------------------
 % ICI C'EST DU FAIT MAISON
 % -----------------------------------------------------------------------
 
