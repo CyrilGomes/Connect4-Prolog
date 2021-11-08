@@ -24,6 +24,10 @@ initial(board([['-','-','-','-','-','-'],
 	       ['-','-','-','-','-','-'],
 	       ['-','-','-','-','-','-']])).
 
+
+incremnt_score:-nb_getval(winCounter, C), CNew is C + 1, nb_setval(winCounter, CNew).
+incremnt_draw:-nb_getval(drawCounter, C), CNew is C + 1, nb_setval(drawCounter, CNew).
+
 %%%%%%%%%%%%%%%%%%
 %%% SHOW BOARD %%%
 %%%%%%%%%%%%%%%%%%
@@ -59,29 +63,69 @@ connect4:- initial(X),
 	   show(X),
 	   nextMove('X',X), !.
 
+
+
+stat_r(0):-
+	nb_getval(winCounter, Win),
+			nb_getval(drawCounter, Draw),
+			nb_getval(totalCounter, Total),
+			nb_getval(winCounter, Win),
+			print('Total :'),
+			print(Total),
+			nl,
+			print('Win :'),
+			print(Win),
+			nl,
+			print('Draw :'),
+			print(Draw),
+			nl,
+			print('Proba :'),
+			Proba is Win/Total,
+			print(Proba).
+
+stat_r(Max):-
+	initial(X),
+	show(X),
+	nextMove('X',X), !,
+	NewMax is Max-1,
+	stat_r(NewMax).
+
+statistique(Max):-
+			nb_setval(winCounter, 0),
+			nb_setval(drawCounter, 0),
+			nb_setval(totalCounter, Max),
+			stat_r(Max).
+
+			
+
+
+
 %nextMove(J,X) J is the player that needs to move ('O' or 'X') and X is the board. Checks if the game has finished. If it hasn't finished, performs next move.
 nextMove('X',X):- wins('O',X),
-		  write('Machine wins!').
+		  write('Machine wins!'),
+		  incremnt_score.
+
 nextMove('O',X):- wins('X',X),
 		  write('You win!').
+		  
+
 nextMove(_,X):- full(X),
-		write('Draw').
+		write('Draw'),
+		incremnt_draw.
 	
+	/*
 nextMove('X',X):- repeat, %repeats in case a column is full
 		  readColumn(C),
 		  play('X',C,X,X2), !,
 		  show(X2),
-		  nextMove('O',X2).
-
-
-/*
+		  nextMove('O',X2).*/
 nextMove('X',X):-
-		machine('X',X,X2),!,
+		machine(rand,'X',X,X2),!,
 		show(X2),
-		nextMove('O',X2).*/
+		nextMove('O',X2).
 			
 nextMove('O',X):-
-	machine('O',X,X2),!,
+	machine(first,'O',X,X2),!,
 		  show(X2),
 		  nextMove('X',X2).
 
@@ -186,7 +230,7 @@ somme_liste([Nb|Reste], Somme) :-
     Somme is Nb + TempSomme.
 
 % -----------------------------------------------------------------------
-% ICI C'EST DU CODE RECYCLE D'AU-DESSUS (EN PARTICULIER LA FONCTION "WINS")
+% ICI C'EST DU CODE RECYCLE D'AU-DESSUS (EN PARTICULIER LA FONCTION "WINS") (Fait maison)
 % -----------------------------------------------------------------------
 
 % -------------- VERTICAL CHAIN -----------------------------------------
@@ -288,7 +332,6 @@ diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T),
 % -----------------------------------------------------------------------
 
 chain_score(Player, Board, Score) :-
-	
 	(wins(Player,Board),
 	Swin is 99999
 	; Swin is 0),
@@ -305,201 +348,15 @@ chain_score(Player, Board, Score) :-
 	Score is S1 + S2 + S3 + S4+Swin.
 
 
-eval_board(Player, Board, Value) :-
+eval_board(first,Player, Board, Value) :-
 	chain_score(Player, Board, Value).
 	%write_ln(Value).
 	%Value is random().	
 
-
-
-/*vertical_chain_full(X, board(T), 0) :-
-	append(_,[Y,X,X,X,Y|_], C).
-
-
-vertical_chain_full(X, board(T), 0) :-
-	append(_,[Y,X,X,X|[]],C).
-
-vertical_chain_full(X, board(T), 0) :-
-	dif([X,X,X,Y|[_|_]], C).
-
-vertical_chain_full(X,board(T), 4):- append(_, [C|_], T),
-	append(_,[X,X,X,X|_],C).
-
-% 
-vertical_chain_full(X,board(T), 3):- append(_, [C|_], T),
-	append(_,[X,X,X|_],C),
-	append(_,[Y,X,X,X,Y|_], C) -> fail,
-	append(_,[Y,X,X,X|[]],C) -> fail,
-	dif([X,X,X,Y|[_|_]], C).
-
-vertical_chain_full(X,board(T), 2):- append(_, [C|_], T),
-	append(_,[X,X|_],C);
-	append(_,[Y,X,X,Y|_], C) -> fail;
-	append(_,[Y,X,X|[]],C) -> fail;
-	[X,X,Y|[_|_]] == C -> fail.
-
-% -------------- HORIZONTAL CHAIN -----------------------------------------
-horizontal_chain_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	append(I3,[X|_],C3),
-	append(I4,[X|_],C4),
-	length(I1,M), length(I2,M), length(I3,M), length(I4,M).
-horizontal_chain_full(X,board(T), 3):- append(_,[C1,C2,C3|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	append(I3,[X|_],C3),
-	length(I1,M), length(I2,M), length(I3,M).
-horizontal_chain_full(X,board(T), 2):- append(_,[C1,C2|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	length(I1,M), length(I2,M).
-
-diagonal_chain_1_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	append(I3,[X|_],C3),
-	append(I4,[X|_],C4),
-	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
-	M2 is M1+1, M3 is M2+1, M4 is M3+1.
-diagonal_chain_1_full(X,board(T), 3):- append(_,[C1,C2,C3|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	append(I3,[X|_],C3),
-	length(I1,M1), length(I2,M2), length(I3,M3),
-	M2 is M1+1, M3 is M2+1.
-diagonal_chain_1_full(X,board(T), 2):- append(_,[C1,C2|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	length(I1,M1), length(I2,M2),
-	M2 is M1+1.
-
-diagonal_chain_2_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
-		   append(I1,[X|_],C1),
-		   append(I2,[X|_],C2),
-		   append(I3,[X|_],C3),
-		   append(I4,[X|_],C4),
-		   length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
-		   M2 is M1-1, M3 is M2-1, M4 is M3-1.
-diagonal_chain_2_full(X,board(T), 3):- append(_,[C1,C2,C3|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	append(I3,[X|_],C3),
-	length(I1,M1), length(I2,M2), length(I3,M3),
-	M2 is M1-1, M3 is M2-1.
-diagonal_chain_2_full(X,board(T), 2):- append(_,[C1,C2|_],T),
-	append(I1,[X|_],C1),
-	append(I2,[X|_],C2),
-	length(I1,M1), length(I2,M2),
-	M2 is M1-1.
-
-% -----------------------------------------------------------------------
-% ICI C'EST DU FAIT MAISON
-% -----------------------------------------------------------------------
-
-% Numéros de lignes fonctionnelles (au-delà, ou en-dessous, valeur illégale)
-line(0).
-line(1).
-line(2).
-line(3).
-line(4).
-line(5).
-
-% Retourne 1 si la case (X,Y) appartient à Player, 0 si c'est le joueur adverse, -1 sinon
-check_player(Player, board(Board), X, Y, Res) :-
-	col(X),
-	line(Y),
-	nth0(Y, Board, Line),
-	nth0(X, Line, Square),
-	check_player(Player, Square, Res).
-check_player('O', 'X', 0).
-check_player('X', 'O', 0).
-check_player('X', 'X', 1).
-check_player('O', 'O', 1).
-check_player(_, '-', 0).
-
-
-
-% Vérification de blocage d'une chaîne par l'adversaire (Score = 0)
-diagonal_chain_1(Player, Board, X, Y) :-
-	%show(Board),
-	Xeval is X+2,
-	Yeval is Y-2,
-	check_player(Player, Board, Xeval, Yeval, 0),
-	Xeval2 is X-2,
-	Yeval2 is Y+2,
-	check_player(Player, Board,Xeval2, Yeval22, 0).
-% Vérification de la présence d'une diagonale décroissante et son score associé (Score = nb de cases adjacentes)
-diagonal_chain_1(Player, Board, X, Y, Score) :-
-	check_player(Player, Board, X, Y, S1),
-	Xeval is X+1,
-	Yeval is Y-1,
-	check_player(Player, Board,Xeval, Yeval, S2),
-	Xeval2 is X-1,
-	Yeval2 is Y+1,
-	check_player(Player, Board,Xeval2, Yeval2, S3),
-	Score is S1 + S2 + S3.
-
-diagonal_chain_2(Player, Board, X, Y) :-
-	Xeval is X+2,
-	Yeval is Y+2,
-	check_player(Player, Board,Xeval, Yeval, 0),
-	Xeval2 is X-2,
-	Yeval2 is Y-2,
-	check_player(Player, Board, Xeval2, Yeval2, 0).
-
-diagonal_chain_2(Player, Board, X, Y, Score) :-
-	check_player(Player, Board, X, Y, S1),
-	Xeval is X+1,
-	Yeval is Y+1,
-	check_player(Player, Board, Xeval, Yeval, S2),
-	Xeval2 is X-1,
-	Yeval2 is Y-1,
-	check_player(Player, Board, Xeval2, Yeval2, S3),
-	Score is S1 + S2 + S3.
-
-horizontal_chain(Player, Board, X, Y) :-
-	Xeval is X+2,
-	check_player(Player, Board, Xeval, Y, 0),
-	Xeval2 is X-2,
-	check_player(Player, Board, Xeval2, Y, 0).
-
-horizontal_chain(Player, Board, X, Y, Score) :-
-	check_player(Player, Board, X, Y, S1),
-	Xeval is X+1,
-	check_player(Player, Board, Xeval, Y, S2),
-	Xeval2 is X-1,
-	check_player(Player, Board,Xeval2, Y, S3),
-	Score is S1 + S2 + S3.
-
-vertical_chain(Player, Board, X, Y) :-
-	Yeval is Y+2,
-	check_player(Player, Board, X, Yeval, 0),
-	Yeval2 is Y-2,
-	check_player(Player, Board, X, Yeval2, 0).
-
-vertical_chain(Player, Board, X, Y, Score) :-
-	check_player(Player, Board, X, Y, S1),
-	Yeval is Y+1,
-	check_player(Player, Board, X, Yeval, S2),
-	Yeval2 is Y-1,
-	check_player(Player, Board, X, Yeval2, S3),
-	Score is S1 + S2 + S3.
-
-% Pour l'instant: Dès qu'une chaîne est trouvé dans chacun des sens, on retourne le nb max de cases adjacentes appartenants à Player
-% SUGGESTION (peut-être lourde): Récupérer TOUTES les occurences de ces chaînes (avec findall) pour pondérer le score sur le nb de chaînes
-% OU ALORS (attention suggestion à la Thibaud à minuit): ON CHERCHE UNIQUEMENT LA PREMIERE (ou toutes les) CHAÎNE(S) AVEC 3 CASES ADJACENTES
-best_chain(Player, Board, X, Y, BestChain) :-
-	%check_player(Player, Board, X, Y, 1),
-	%trace(),
-	diagonal_chain_1(Player, Board, X, Y, C1),
-	diagonal_chain_2(Player, Board, X, Y, C2),
-	horizontal_chain(Player, Board, X, Y, C3),
-	vertical_chain(Player, Board, X, Y, C4),
-	max_list([C1, C2, C3, C4], BestChain).*/
+eval_board(rand,Player, Board, Value) :-
+		random(Value).	
 	
 
-	
 
 print_liste([]).
 print_liste([A|Z]) :-
@@ -507,33 +364,40 @@ print_liste([A|Z]) :-
 
 best_move(_, [], _, _).
 
-best_move(Player, [Move | []], Move, Value) :-
-	eval_board(Player,Move, Value).
+
+
+best_move(Method, Player, [Move | []], Move, Value) :-
+	eval_board(Method, Player,Move, Value).
 	%writeln(Value).
 
-best_move(Player, [Move | RestMoves], BestMove, BestValue) :-
+best_move(Method,Player, [Move | RestMoves], BestMove, BestValue) :-
 	%trace(),
-	eval_board(Player,Move, Value),
-	best_move(Player, RestMoves, CurrentBestM, CurrentBestV),
+	eval_board(Method,Player,Move, Value),
+	best_move(Method,Player, RestMoves, CurrentBestM, CurrentBestV),
 	
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
 	
 
 
-minimax(Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
+minimax(_,Max, Player, [Move | []], BestMove, BestValue, CurrentDepth):-
+	full(Move),
+	BestMove = Move,
+	BestValue is 9999.
+
+minimax(_,Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
 	Max == Player,
 	wins(Player,Move),
 	BestMove = Move,
 	BestValue is -9999.
-minimax(Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
+minimax(_,Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
 	Max\==Player,
 	wins(Player,Move),
 	BestMove = Move,
 	BestValue is 9999.
 
 
-minimax(Max,Player, AllMoves, BestMove, BestValue, 1) :-
-	best_move(Player, AllMoves, BestMove, BestValue).
+minimax(Method,Max,Player, AllMoves, BestMove, BestValue, 1) :-
+	best_move(Method,Player, AllMoves, BestMove, BestValue).
 
 /*
 
@@ -546,25 +410,26 @@ minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	%writeln(' Wins !').
 */
 
-minimax(Max, Player, [Move | []], Move, BestValue, CurrentDepth) :-
+minimax(Method,Max, Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
-	minimax(Max,Other, AllMoves, _, BestValue, NewDepth).
+	minimax(Method,Max,Other, AllMoves, _, BestValue, NewDepth).
 
-minimax(Max, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
-	minimax(Max,Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
+minimax(Method,Max, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	minimax(Method,Max,Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
-	minimax(Max,Other, AllMoves, _, PossibleBestV, NewDepth),
+	minimax(Method,Max,Other, AllMoves, _, PossibleBestV, NewDepth),
 	compare_moves(Other,Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
 
 % minimax(+Board, -BestMove)
 % Matches the next move based on the current board.
-machine(Player, Board, BestMove) :-
+machine(Method,Player, Board, BestMove) :-
         all_possible_moves(Player, Board, AllMoves),
-	minimax(Player,Player, AllMoves, BestMove, BestValue, 4),
+
+	minimax(Method,Player,Player, AllMoves, BestMove, BestValue, 2),
 
 	%writeln('Value  :'),
 	%show(BestMove),
