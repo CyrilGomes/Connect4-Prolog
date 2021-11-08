@@ -174,31 +174,32 @@ all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 % ICI C'EST DU CODE RECYCLE D'AU-DESSUS (EN PARTICULIER LA FONCTION "WINS")
 % -----------------------------------------------------------------------
 
-% -------------- VERTICAL CHAIN -----------------------------------------
-vertical_chain_full(X,board(T), 0):- 
+chain_full(X, C, 4) :-
+	length(C, L),
+	L > 4,
 	append(_, [C|_], T),
-	change_player(X, Y),
-	append(_,[Y,X,X,X,Y|_],C).
-vertical_chain_full(X,board(T), 0):- 
-	append(_, [C|_], T),
-	change_player(X, Y),
-	[X,X,X,Y|[_|_]] = C.
-vertical_chain_full(X,board(T), 0):- 
-	append(_, [C|_], T),
-	change_player(X, Y),
-	append(_,[Y,X,X,X|[]],C).
-vertical_chain_full(X,board(T), 0):- 
-	append(_, [C|_], T),
-	change_player(X, Y),
-	append(_,[Y,X,X,Y|_],C).
+	append(_,[X,X,X,X|_],C).
 
+chain_full(X, C, 3) :-
+	
+
+% -------------- VERTICAL CHAIN -----------------------------------------
 vertical_chain_full(X,board(T), 4):- append(_, [C|_], T),
 	append(_,[X,X,X,X|_],C).
-vertical_chain_full(X,board(T), 3):- append(_, [C|_], T),
-	append(_,[X,X,X|_],C).
-vertical_chain_full(X,board(T), 2):- append(_, [C|_], T),
-	append(_,[X,X|_],C).
 
+vertical_chain_full(X,board(T), 3):- append(_, [C|_], T),
+	append(_,[X,X,X|_],C),
+	append(_,[Y,X,X,X,Y|_], C) -> fail,
+	append(_,[Y,X,X,X|[]],C) -> fail,
+	dif([X,X,X,Y|[_|_]], C).
+
+vertical_chain_full(X,board(T), 2):- append(_, [C|_], T),
+	append(_,[X,X|_],C);
+	append(_,[Y,X,X,Y|_], C) -> fail;
+	append(_,[Y,X,X|[]],C) -> fail;
+	[X,X,Y|[_|_]] == C -> fail.
+
+% -------------- HORIZONTAL CHAIN -----------------------------------------
 horizontal_chain_full(X,board(T), 4):- append(_,[C1,C2,C3,C4|_],T),
 	append(I1,[X|_],C1),
 	append(I2,[X|_],C2),
