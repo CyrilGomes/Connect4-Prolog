@@ -92,28 +92,28 @@ playColumn(X,['-'|AS],['-'|AS2]):- playColumn(X,AS,AS2). % descend column
 wins(X,board(T)):- append(_, [C|_], T), % check if there's a column...
 	           append(_,[X,X,X,X|_],C). % ...which has 4 connected pieces of player X
 %check if there's a row in T with 4 connected pieces of player X
-wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), % check if 4 connected columns exists in board...
-		   append(I1,[X|_],C1), %...such that all of them contain a piece of player X...
+wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), 
+		   append(I1,[X|_],C1), 
 		   append(I2,[X|_],C2),
 		   append(I3,[X|_],C3),
 		   append(I4,[X|_],C4),
 		   length(I1,M), length(I2,M), length(I3,M), length(I4,M). %...and every piece is in the same height
 %check if there's a diagonal (type \) in T with 4 connected pieces of player X
-wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), % check if 4 connected columns exists in board...
-		   append(I1,[X|_],C1), %...such that all of them contain a piece of player X...
+wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), 
+		   append(I1,[X|_],C1), 
 		   append(I2,[X|_],C2),
 		   append(I3,[X|_],C3),
 		   append(I4,[X|_],C4),
 		   length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
-		   M2 is M1+1, M3 is M2+1, M4 is M3+1. %...and every piece is within the same diagonal \
+		   M2 is M1+1, M3 is M2+1, M4 is M3+1. 
 %check if there's a diagonal (type /) in T with 4 connected pieces of player X
-wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), % check if 4 connected columns exists in board...
-		   append(I1,[X|_],C1), %...such that all of them contain a piece of player X...
+wins(X,board(T)):- append(_,[C1,C2,C3,C4|_],T), 
+		   append(I1,[X|_],C1), 
 		   append(I2,[X|_],C2),
 		   append(I3,[X|_],C3),
 		   append(I4,[X|_],C4),
 		   length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
-		   M2 is M1-1, M3 is M2-1, M4 is M3-1. %...and every piece is within the same diagonal /
+		   M2 is M1-1, M3 is M2-1, M4 is M3-1. 
 
 %full(T) is satisfied if there isn't any free spot ('-')
 full(board(T)):- \+ (append(_,[C|_],T),
@@ -170,23 +170,146 @@ change_player('X', 'O').
 
 all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 
+% From https://stackoverflow.com/questions/27304954/prolog-sum-of-numbers-in-a-list
+somme_liste([], 0).
+sum([Nb|Reste], Somme) :-
+    sum(Reste, TempSomme),
+    Somme is Nb + TempSomme.
+
 % -----------------------------------------------------------------------
 % ICI C'EST DU CODE RECYCLE D'AU-DESSUS (EN PARTICULIER LA FONCTION "WINS")
 % -----------------------------------------------------------------------
 
-chain_full(X, C, 4) :-
-	length(C, L),
-	L > 4,
-	append(_, [C|_], T),
-	append(_,[X,X,X,X|_],C).
-
-chain_full(X, C, 3) :-
-	
-
 % -------------- VERTICAL CHAIN -----------------------------------------
+vertical_chain(X, board(T), 3):-
+	append(_, [C|_], T),
+	append(_,['-',X,X,X], C).
+vertical_chain(X, board(T), 2) :-
+	append(_, [C|_], T),
+	append(_,['-',X,X], C).
+
+horizontal_chain(X, board(T), 3):-
+	append(_,[C1,C2,C3,C4|_],T), 
+	append(I1,[X|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,['-'|_],C4),
+	length(I1,M), length(I2,M), length(I3,M), length(I4,M).
+horizontal_chain(X, board(T), 2) :-
+	append(_,[C1,C2,C3|_],T), 
+	append(I1,[X|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,['-'|_],C3),
+	length(I1,M), length(I2,M), length(I3,M).
+
+horizontal_chain(X, board(T), 3):-
+	append(_,[C1,C2,C3,C4|_],T), 
+	append(I1,['-'|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,[X|_],C4),
+	length(I1,M), length(I2,M), length(I3,M), length(I4,M).
+horizontal_chain(X, board(T), 2) :-
+	append(_,[C1,C2,C3|_],T), 
+	append(I1,['-'|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	length(I1,M), length(I2,M), length(I3,M).
+
+diagonal_chain_1(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
+	append(I1,[X|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,['-'|_],C4),
+	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
+	M2 is M1-1, M3 is M2-1, M4 is M3-1. 
+diagonal_chain_1(X,board(T), 2):- append(_,[C1,C2,C3|_],T), 
+	append(I1,[X|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,['-'|_],C3),
+	length(I1,M1), length(I2,M2), length(I3,M3),
+	M2 is M1-1, M3 is M2-1. 
+
+diagonal_chain_1(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
+	append(I1,['-'|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,[X|_],C4),
+	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
+	M2 is M1-1, M3 is M2-1, M4 is M3-1. 
+diagonal_chain_1(X,board(T), 2):- append(_,[C1,C2,C3|_],T), 
+	append(I1,['-'|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	length(I1,M1), length(I2,M2), length(I3,M3),
+	M2 is M1-1, M3 is M2-1. 
+
+diagonal_chain_2(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
+	append(I1,[X|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,['-'|_],C4),
+	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
+	M2 is M1+1, M3 is M2+1, M4 is M3+1. 
+diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T), 
+	append(I1,[X|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,['-'|_],C3),
+	length(I1,M1), length(I2,M2), length(I3,M3),
+	M2 is M1+1, M3 is M2+1. 
+
+diagonal_chain_2(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
+	append(I1,['-'|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	append(I4,[X|_],C4),
+	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
+	M2 is M1+1, M3 is M2+1, M4 is M3+1. 
+diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T), 
+	append(I1,['-'|_],C1), 
+	append(I2,[X|_],C2),
+	append(I3,[X|_],C3),
+	length(I1,M1), length(I2,M2), length(I3,M3),
+	M2 is M1+1, M3 is M2+1. 
+
+
+% -----------------------------------------------------------------------
+% ICI C'EST DU FAIT MAISON
+% -----------------------------------------------------------------------
+
+chain_score(Player, Board, Score) :-
+	findall(I1, vertical_chain(Player, Board, I), L1),
+	somme_liste(L1, S1),
+	findall(I2, horizontal_chain(Player, Board, I), L2),
+	somme_liste(L2, S2),
+	findall(I3, diagonal_chain_1(Player, Board, I), L3),
+	somme_liste(L3, S3),
+	findall(I4, diagonal_chain_2(Player, Board, I), L4),
+	somme_liste(L4, S4),
+	S is S1 + S2 + S3 + S4,
+	Score is S1 + S2 + S3 + S4.
+
+eval_board(Player, [Board, _], Value) :-
+	%chain_score(Player, Board, Value),
+	%write_ln(Value).
+	Value is random().	
+
+
+
+/*vertical_chain_full(X, board(T), 0) :-
+	append(_,[Y,X,X,X,Y|_], C).
+
+
+vertical_chain_full(X, board(T), 0) :-
+	append(_,[Y,X,X,X|[]],C).
+
+vertical_chain_full(X, board(T), 0) :-
+	dif([X,X,X,Y|[_|_]], C).
+
 vertical_chain_full(X,board(T), 4):- append(_, [C|_], T),
 	append(_,[X,X,X,X|_],C).
 
+% 
 vertical_chain_full(X,board(T), 3):- append(_, [C|_], T),
 	append(_,[X,X,X|_],C),
 	append(_,[Y,X,X,X,Y|_], C) -> fail,
@@ -357,30 +480,7 @@ best_chain(Player, Board, X, Y, BestChain) :-
 	diagonal_chain_2(Player, Board, X, Y, C2),
 	horizontal_chain(Player, Board, X, Y, C3),
 	vertical_chain(Player, Board, X, Y, C4),
-	max_list([C1, C2, C3, C4], BestChain).
-	
-
-% Adaptation maison de https://github.com/jaunerc/minimax-prolog/blob/master/minimax.pl
-/*
-eval_board(Player,Board, Value) :-
-	(wins(Player,Board),
-	Value is 1
-	%show(Board)
-	;
-	change_player(Player,Other),
-	(wins(Other,Board),
-	 Value is -1
-	; Value is 0)
-	).*/
-
-eval_board(Player,Board, Value) :-
-	show(Board),
-	findall([X,Y], check_player(Player,Board,X,Y,1), G),
-	
-	Values is 1,
-	%print(Value + ' : '),	
-	writeln(G).
-	
+	max_list([C1, C2, C3, C4], BestChain).*/
 	
 
 	
@@ -442,7 +542,7 @@ minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 % Matches the next move based on the current board.
 machine(Board, BestMove) :-
         all_possible_moves('O', Board, AllMoves),
-	minimax('O', AllMoves, BestMove, BestValue, 2),
+	minimax('O', AllMoves, BestMove, BestValue, 3),
 
 	writeln('Value  :'),
 	%show(BestMove),
