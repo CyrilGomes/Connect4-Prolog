@@ -116,21 +116,21 @@ nextMove(_,X):- full(X),
 		write('Draw'),
 		incremnt_draw.
 	
-	
+	/*
 nextMove('X',X):- repeat, %repeats in case a column is full
 		
 		readColumn(C),
 		play('X',C,X,X2), !,
 		show(X2),
-		nextMove('O',X2).
+		nextMove('O',X2).*/
 	
-	/*
 nextMove('X',X):-
 		machine(rand,'X',X,X2),!,
 		show(X2),
-		nextMove('O',X2).*/
+		nextMove('O',X2).
 			
 nextMove('O',X):-
+	
 	machine(first,'O',X,X2),!,
 		  show(X2),
 		  nextMove('X',X2).
@@ -213,21 +213,13 @@ col(6).
 % CompareMoves(+MinMax, +MoveA, +ValueA, +MoveB, +ValueB, -BetterMove, -BetterValue)
 % Chooses the move with the higher value.
 
-compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
-	nb_getval(maxPlayer,Max),
-	Max == Player,
+compare_moves('O', MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
 	ValueA >= ValueB.
-compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
-	nb_getval(maxPlayer,Max),
-	Max == Player,
+compare_moves('O', MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
 	ValueA < ValueB.
-compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
-	nb_getval(maxPlayer,Max),
-	Max \== Player,
+compare_moves('X', MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
 	ValueA =< ValueB.
-compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
-	nb_getval(maxPlayer,Max),
-	Max \== Player,
+compare_moves('X', MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
 	ValueA > ValueB.
 
 % change_max_min(+MinOrMax, TheOther)
@@ -365,6 +357,7 @@ gradient(X, board(T), Score):-
 	Val6 is N6*1/4,
 	Val7 is N7*0,
 	%print(Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7),
+	nl,
 	Score is Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7.
 
 
@@ -402,8 +395,7 @@ eval_board(rand,Player, Board, Value) :-
 eval_board(grad,Player, Board, Value) :-
 	chain_score(Player, Board, Value1),
 	gradient(Player, Board, Value2),
-	Value is max(Value1, Value2).
-
+	Value is Value1*Value2.
 
 
 print_liste([]).
@@ -427,54 +419,51 @@ best_move(Method,Player, [Move | RestMoves], BestMove, BestValue) :-
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
 	
 
-minimax(_,Player, [Move | []], BestMove, BestValue, CurrentDepth):-
+minimax(_,Max,Player, [Move | []], BestMove, BestValue, CurrentDepth):-
 	full(Move),
 	BestMove = Move,
 	BestValue is 9999.
 
 
-minimax(_,Player, [Move | _], BestMove, BestValue, CurrentDepth):-
-	nb_getval(maxPlayer,Max),
+minimax(_,Max,Player, [Move | _], BestMove, BestValue, CurrentDepth):-
 	Max == Player,
 	wins(Player,Move),
 	BestMove = Move,
 	BestValue is -9999.
 
-minimax(_, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
-	nb_getval(maxPlayer,Max),
+minimax(_,Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
 	%trace(),
 	Max\==Player,
 	wins(Player,Move),
 	BestMove = Move,
 	BestValue is 9999.
 
-minimax(Method,Player, AllMoves, BestMove, BestValue, 1) :-
+
+minimax(Method,Max,Player, AllMoves, BestMove, BestValue, 1) :-
 	best_move(Method,Player, AllMoves, BestMove, BestValue).
 
 
-
-minimax(Method, Player, [Move | []], Move, BestValue, CurrentDepth) :-
+minimax(Method,Max, Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
-	minimax(Method,Other, AllMoves, _, BestValue, NewDepth).
+	minimax(Method,Max,Other, AllMoves, _, BestValue, NewDepth).
 
-minimax(Method, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
-	minimax(Method,Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
+minimax(Method,Max, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	minimax(Method,Max,Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
-	minimax(Method,Other, AllMoves, _, PossibleBestV, NewDepth),
+	minimax(Method,Max,Other, AllMoves, _, PossibleBestV, NewDepth),
 	compare_moves(Other,Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
 
 % minimax(+Board, -BestMove)
 % Matches the next move based on the current board.
 machine(Method,Player, Board, BestMove) :-
-	nb_setval(maxPlayer,Player),
         all_possible_moves(Player, Board, AllMoves),
 
 
-	minimax(Method,Player, AllMoves, BestMove, BestValue, 4),
+	minimax(Method,Player,Player, AllMoves, BestMove, BestValue, 4),
 
 	%writeln('Value  :'),
 	%show(BestMove),
