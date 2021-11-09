@@ -213,6 +213,24 @@ col(6).
 % CompareMoves(+MinMax, +MoveA, +ValueA, +MoveB, +ValueB, -BetterMove, -BetterValue)
 % Chooses the move with the higher value.
 
+compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveA, -9999) :-
+	nb_getval(maxPlayer,Max),
+	Max == Player,
+	wins(Player,MoveA).
+compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveB, -9999) :-
+	nb_getval(maxPlayer,Max),
+	Max == Player,
+	wins(Player,MoveB).
+
+compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveA, 9999) :-
+	nb_getval(maxPlayer,Max),
+	Max \== Player,
+	wins(Player,MoveA).
+compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveB, 9999) :-
+	nb_getval(maxPlayer,Max),
+	Max \== Player,
+	wins(Player,MoveB).
+
 compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveA, ValueA) :-
 	nb_getval(maxPlayer,Max),
 	Max == Player,
@@ -229,6 +247,9 @@ compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
 	nb_getval(maxPlayer,Max),
 	Max \== Player,
 	ValueA > ValueB.
+
+
+
 
 % change_max_min(+MinOrMax, TheOther)
 % Changes the MinMax atom.
@@ -364,7 +385,8 @@ gradient(X, board(T), Score):-
 	Val5 is N5*1/2,
 	Val6 is N6*1/4,
 	Val7 is N7*0,
-	%print(Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7),
+
+	%writeln(Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7+Swin),
 	Score is Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7.
 
 
@@ -375,9 +397,7 @@ gradient(X, board(T), Score):-
 % -----------------------------------------------------------------------
 
 chain_score(Player, Board, Score) :-
-	(wins(Player,Board),
-	Swin is 99999
-	; Swin is 0),
+
 	%show(Board),
 	findall(I1, vertical_chain(Player, Board, I1), L1),
 	somme_liste(L1, S1),
@@ -388,7 +408,7 @@ chain_score(Player, Board, Score) :-
 	findall(I4, diagonal_chain_2(Player, Board, I4), L4),
 	somme_liste(L4, S4),
 	S is S1 + S2 + S3 + S4,
-	Score is S1 + S2 + S3 + S4+Swin.
+	Score is S1 + S2 + S3 + S4.
 
 
 eval_board(first,Player, Board, Value) :-
@@ -400,9 +420,9 @@ eval_board(rand,Player, Board, Value) :-
 	random(Value).	
 	
 eval_board(grad,Player, Board, Value) :-
-	chain_score(Player, Board, Value1),
-	gradient(Player, Board, Value2),
-	Value is max(Value1, Value2).
+	%chain_score(Player, Board, Value1),
+	gradient(Player, Board, Value).
+	%Value is max(Value1, Value2).
 
 
 
@@ -427,12 +447,11 @@ best_move(Method,Player, [Move | RestMoves], BestMove, BestValue) :-
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
 	
 
-minimax(_,Player, [Move | []], BestMove, BestValue, CurrentDepth):-
+minimax(Method,Player, [Move | []], BestMove, BestValue, CurrentDepth):-
 	full(Move),
-	BestMove = Move,
-	BestValue is 9999.
+	best_move(Method,Player, [Move | []],BestMove, BestValue).
 
-
+/*
 minimax(_,Player, [Move | _], BestMove, BestValue, CurrentDepth):-
 	nb_getval(maxPlayer,Max),
 	Max == Player,
@@ -447,7 +466,15 @@ minimax(_, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
 	wins(Player,Move),
 	BestMove = Move,
 	BestValue is 9999.
+*/
+/*
+minimax(Method, Player, [Move | RestMove], BestMove, BestValue, CurrentDepth):-
+	%trace(),
+	%writeln(Move),
+	wins(Player,Move),
+	best_move(Method,Player, [Move | RestMove],BestMove, BestValue).
 
+*/
 minimax(Method,Player, AllMoves, BestMove, BestValue, 1) :-
 	best_move(Method,Player, AllMoves, BestMove, BestValue).
 
@@ -469,15 +496,35 @@ minimax(Method, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :
 
 % minimax(+Board, -BestMove)
 % Matches the next move based on the current board.
-machine(Method,Player, Board, BestMove) :-
+machine(grad,Player, Board, BestMove) :-
 	nb_setval(maxPlayer,Player),
         all_possible_moves(Player, Board, AllMoves),
 
+	minimax(grad,Player, AllMoves, BestMove, BestValue, 1),
+
+	%writeln('Value  :'),
+	%show(BestMove),
+	write_ln(BestValue).
+
+machine(rand,Player, Board, BestMove) :-
+	nb_setval(maxPlayer,Player),
+        all_possible_moves(Player, Board, AllMoves),
+
+	minimax(rand,Player, AllMoves, BestMove, BestValue, 1),
+
+	%writeln('Value  :'),
+	%show(BestMove),
+	write_ln(BestValue).
+
+machine(Method,Player, Board, BestMove) :-
+	nb_setval(maxPlayer,Player),
+        all_possible_moves(Player, Board, AllMoves),
 
 	minimax(Method,Player, AllMoves, BestMove, BestValue, 4),
 
 	%writeln('Value  :'),
 	%show(BestMove),
 	write_ln(BestValue).
+
 
 
