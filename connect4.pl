@@ -1,3 +1,8 @@
+% -----------------------------------------------------------------------
+% ICI C'EST DU CODE MAJORITAIREMENT COPIE-COLLE (Il y a quelques fonctions maison mais rien de grave)
+% Source: https://github.com/rvinas/connect-4-prolog
+% -----------------------------------------------------------------------
+
 % Copyright 2016 Ramon Viñas, Marc Roig
 %
 % Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +29,7 @@ initial(board([['-','-','-','-','-','-'],
 	       ['-','-','-','-','-','-'],
 	       ['-','-','-','-','-','-']])).
 
-
+% Gestion de l'incrémentation des variable statistiques
 incremnt_score:-nb_getval(winCounter, C), CNew is C + 1, nb_setval(winCounter, CNew).
 incremnt_draw:-nb_getval(drawCounter, C), CNew is C + 1, nb_setval(drawCounter, CNew).
 
@@ -67,25 +72,26 @@ connect4:- initial(X),
 	nextMove('X',X), !.
 
 
-
+% Affichage des statistiques
 stat_r(0):-
 	nb_getval(winCounter, Win),
-			nb_getval(drawCounter, Draw),
-			nb_getval(totalCounter, Total),
-			nb_getval(winCounter, Win),
-			print('Total :'),
-			print(Total),
-			nl,
-			print('Win :'),
-			print(Win),
-			nl,
-			print('Draw :'),
-			print(Draw),
-			nl,
-			print('Proba :'),
-			Proba is Win/Total,
-			print(Proba).
+	nb_getval(drawCounter, Draw),
+	nb_getval(totalCounter, Total),
+	nb_getval(winCounter, Win),
+	print('Total :'),
+	print(Total),
+	nl,
+	print('Win :'),
+	print(Win),
+	nl,
+	print('Draw :'),
+	print(Draw),
+	nl,
+	print('Proba :'),
+	Proba is Win/Total,
+	print(Proba).
 
+% Initialise le jeu et lance [Max] parties
 stat_r(Max):-
 	initial(X),
 	show(X),
@@ -93,15 +99,12 @@ stat_r(Max):-
 	NewMax is Max-1,
 	stat_r(NewMax).
 
+% Initialisation des variables statistiques
 statistique(Max):-
 			nb_setval(winCounter, 0),
 			nb_setval(drawCounter, 0),
 			nb_setval(totalCounter, Max),
 			stat_r(Max).
-
-			
-
-
 
 %nextMove(J,X) J is the player that needs to move ('O' or 'X') and X is the board. Checks if the game has finished. If it hasn't finished, performs next move.
 nextMove('X',X):- wins('O',X),
@@ -248,15 +251,10 @@ compare_moves(Player, MoveA, ValueA, MoveB, ValueB, MoveB, ValueB) :-
 	Max \== Player,
 	ValueA > ValueB.
 
-
-
-
 % change_max_min(+MinOrMax, TheOther)
 % Changes the MinMax atom.
 change_player('O', 'X').
 change_player('X', 'O').
-
-all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 
 % From https://stackoverflow.com/questions/27304954/prolog-sum-of-numbers-in-a-list
 somme_liste([], 0).
@@ -272,7 +270,7 @@ somme_liste([Nb|Reste], Somme) :-
 % ICI C'EST DU CODE RECYCLE D'AU-DESSUS (EN PARTICULIER LA FONCTION "WINS") (Fait maison)
 % -----------------------------------------------------------------------
 
-% -------------- VERTICAL CHAIN -----------------------------------------
+% Vérifie si il existe une chaîne de 2-3 pions verticale appartenant à X dans T et retourne le nombre de pions adjacents
 vertical_chain(X, board(T), 3):-
 	append(_, [C|_], T),
 	append(_,['-',X,X,X], C).
@@ -280,6 +278,7 @@ vertical_chain(X, board(T), 2) :-
 	append(_, [C|_], T),
 	append(_,['-',X,X], C).
 
+% Vérifie si il existe une chaîne de 2-3 pions horizontale appartenant à X dans T et retourne le nombre de pions adjacents
 horizontal_chain(X, board(T), 3):-
 	append(_,[C1,C2,C3,C4|_],T), 
 	append(I1,[X|_],C1), 
@@ -293,7 +292,6 @@ horizontal_chain(X, board(T), 2) :-
 	append(I2,[X|_],C2),
 	append(I3,['-'|_],C3),
 	length(I1,M), length(I2,M), length(I3,M).
-
 horizontal_chain(X, board(T), 3):-
 	append(_,[C1,C2,C3,C4|_],T), 
 	append(I1,['-'|_],C1), 
@@ -308,6 +306,7 @@ horizontal_chain(X, board(T), 2) :-
 	append(I3,[X|_],C3),
 	length(I1,M), length(I2,M), length(I3,M).
 
+% Vérifie si il existe une chaîne de 2-3 pions diagonale (/) appartenant à X dans T et retourne le nombre de pions adjacents
 diagonal_chain_1(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
 	append(I1,[X|_],C1), 
 	append(I2,[X|_],C2),
@@ -321,7 +320,6 @@ diagonal_chain_1(X,board(T), 2):- append(_,[C1,C2,C3|_],T),
 	append(I3,['-'|_],C3),
 	length(I1,M1), length(I2,M2), length(I3,M3),
 	M2 is M1-1, M3 is M2-1. 
-
 diagonal_chain_1(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
 	append(I1,['-'|_],C1), 
 	append(I2,[X|_],C2),
@@ -336,6 +334,7 @@ diagonal_chain_1(X,board(T), 2):- append(_,[C1,C2,C3|_],T),
 	length(I1,M1), length(I2,M2), length(I3,M3),
 	M2 is M1-1, M3 is M2-1. 
 
+% Vérifie si il existe une chaîne de 2-3 pions diagonale (\) appartenant à X dans T et retourne le nombre de pions adjacents
 diagonal_chain_2(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
 	append(I1,[X|_],C1), 
 	append(I2,[X|_],C2),
@@ -349,7 +348,6 @@ diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T),
 	append(I3,['-'|_],C3),
 	length(I1,M1), length(I2,M2), length(I3,M3),
 	M2 is M1+1, M3 is M2+1. 
-
 diagonal_chain_2(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T), 
 	append(I1,['-'|_],C1), 
 	append(I2,[X|_],C2),
@@ -357,7 +355,6 @@ diagonal_chain_2(X,board(T), 3):- append(_,[C1,C2,C3,C4|_],T),
 	append(I4,[X|_],C4),
 	length(I1,M1), length(I2,M2), length(I3,M3), length(I4,M4),
 	M2 is M1+1, M3 is M2+1, M4 is M3+1. 
-
 diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T), 
 	append(I1,['-'|_],C1), 
 	append(I2,[X|_],C2),
@@ -365,9 +362,14 @@ diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T),
 	length(I1,M1), length(I2,M2), length(I3,M3),
 	M2 is M1+1, M3 is M2+1. 
 
+% -----------------------------------------------------------------------
+% ICI C'EST DU FAIT MAISON
+% -----------------------------------------------------------------------
 
+% Retourne tous les moves possibles à partir de celui fourni
+all_possible_moves(X,T1,Moves):- findall(I,play(X,L,T1,I),Moves).
 
-
+% Heurisitique du gradient
 gradient(X, board(T), Score):-
 	[C1,C2,C3,C4,C5,C6,C7] = T,
 	count(C1, X, N1),
@@ -385,20 +387,10 @@ gradient(X, board(T), Score):-
 	Val5 is N5*1/2,
 	Val6 is N6*1/4,
 	Val7 is N7*0,
-
-	%writeln(Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7+Swin),
 	Score is Val1 + Val2 + Val3 + Val4 + Val5 + Val6 + Val7.
 
-
-
-
-% -----------------------------------------------------------------------
-% ICI C'EST DU FAIT MAISON
-% -----------------------------------------------------------------------
-
+% Heurisitique de la pondération des enchaînements
 chain_score(Player, Board, Score) :-
-
-	%show(Board),
 	findall(I1, vertical_chain(Player, Board, I1), L1),
 	somme_liste(L1, S1),
 	findall(I2, horizontal_chain(Player, Board, I2), L2),
@@ -410,82 +402,48 @@ chain_score(Player, Board, Score) :-
 	S is S1 + S2 + S3 + S4,
 	Score is S1 + S2 + S3 + S4.
 
-
+% Appelle l'heuristique sélectionnée (CODEE ICI EN DUR)
+% (Décommentez ce que vous voulez pour essayer les heuristiques)
 eval_board(first,Player, Board, Value) :-
 	chain_score(Player, Board, Value).
-	%write_ln(Value).
-	%Value is random().	
 
 eval_board(rand,Player, Board, Value) :-
 	random(Value).	
 	
 eval_board(grad,Player, Board, Value) :-
-	%chain_score(Player, Board, Value1),
 	gradient(Player, Board, Value).
-	%Value is max(Value1, Value2).
 
-
-
+% Affiche une liste de moves
 print_liste([]).
 print_liste([A|Z]) :-
     show(A), nl, print_liste(Z).
 
+% Appelle le prédicat d'évaluation pour chaque coup possible dans la liste fournie en paramètres et retourne le mieux/moins évalué et son score associé (en fonction de [Player])
 best_move(_, [], _, _).
-
-
-
 best_move(Method, Player, [Move | []], Move, Value) :-
 	eval_board(Method, Player,Move, Value).
-	%writeln(Value).
-
-best_move(Method,Player, [Move | RestMoves], BestMove, BestValue) :-
-	%trace(),
-	
+best_move(Method,Player, [Move | RestMoves], BestMove, BestValue) :-	
 	eval_board(Method,Player,Move, Value),
 	best_move(Method,Player, RestMoves, CurrentBestM, CurrentBestV),
-	
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
-	
 
+% Vérifie si le coup associé amène à un tableau de jeu complet
 minimax(Method,Player, [Move | []], BestMove, BestValue, CurrentDepth):-
 	full(Move),
-	best_move(Method,Player, [Move | []],BestMove, BestValue).
+	best_move(Method,Player, [Move | []], BestMove, BestValue).
 
-/*
-minimax(_,Player, [Move | _], BestMove, BestValue, CurrentDepth):-
-	nb_getval(maxPlayer,Max),
-	Max == Player,
-	wins(Player,Move),
-	BestMove = Move,
-	BestValue is -9999.
-
-minimax(_, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
-	nb_getval(maxPlayer,Max),
-	%trace(),
-	Max\==Player,
-	wins(Player,Move),
-	BestMove = Move,
-	BestValue is 9999.
-*/
-/*
-minimax(Method, Player, [Move | RestMove], BestMove, BestValue, CurrentDepth):-
-	%trace(),
-	%writeln(Move),
-	wins(Player,Move),
-	best_move(Method,Player, [Move | RestMove],BestMove, BestValue).
-
-*/
+% Appel à best_move quand la profondeur atteinte est la dernière voulue
 minimax(Method,Player, AllMoves, BestMove, BestValue, 1) :-
 	best_move(Method,Player, AllMoves, BestMove, BestValue).
 
-
-
+% Appels récursifs de minimax pour:
+% - Descendre en profondeur
+% - Passer au coup suivant dans la profondeur actuelle
 minimax(Method, Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
 	minimax(Method,Other, AllMoves, _, BestValue, NewDepth).
-
 minimax(Method, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
 	minimax(Method,Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
 	change_player(Player, Other),
@@ -494,37 +452,16 @@ minimax(Method, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :
 	minimax(Method,Other, AllMoves, _, PossibleBestV, NewDepth),
 	compare_moves(Other,Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
 
-% minimax(+Board, -BestMove)
-% Matches the next move based on the current board.
+% Initialise les coups de la première profondeur puis appelle minimax (AVEC UNE PROFONDEUR MAX CODEE EN DUR)
 machine(grad,Player, Board, BestMove) :-
 	nb_setval(maxPlayer,Player),
-        all_possible_moves(Player, Board, AllMoves),
-
-	minimax(grad,Player, AllMoves, BestMove, BestValue, 1),
-
-	%writeln('Value  :'),
-	%show(BestMove),
-	write_ln(BestValue).
-
+	all_possible_moves(Player, Board, AllMoves),
+	minimax(grad,Player, AllMoves, BestMove, BestValue, 1).
 machine(rand,Player, Board, BestMove) :-
 	nb_setval(maxPlayer,Player),
-        all_possible_moves(Player, Board, AllMoves),
-
-	minimax(rand,Player, AllMoves, BestMove, BestValue, 1),
-
-	%writeln('Value  :'),
-	%show(BestMove),
-	write_ln(BestValue).
-
+    all_possible_moves(Player, Board, AllMoves),
+	minimax(rand,Player, AllMoves, BestMove, BestValue, 1).
 machine(Method,Player, Board, BestMove) :-
 	nb_setval(maxPlayer,Player),
-        all_possible_moves(Player, Board, AllMoves),
-
-	minimax(Method,Player, AllMoves, BestMove, BestValue, 4),
-
-	%writeln('Value  :'),
-	%show(BestMove),
-	write_ln(BestValue).
-
-
-
+    all_possible_moves(Player, Board, AllMoves),
+	minimax(Method,Player, AllMoves, BestMove, BestValue, 4).
