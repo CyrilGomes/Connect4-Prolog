@@ -110,22 +110,14 @@ nextMove('O',X):- wins('X',X),
 		  
 
 nextMove(_,X):- full(X),
-		write('Draw'),
-		incremnt_draw.
-	
-	/*
+		write('Draw').
 nextMove('X',X):- repeat, %repeats in case a column is full
 		  readColumn(C),
 		  play('X',C,X,X2), !,
 		  show(X2),
-		  nextMove('O',X2).*/
-nextMove('X',X):-
-		machine(rand,'X',X,X2),!,
-		show(X2),
-		nextMove('O',X2).
-			
+		  nextMove('O',X2).
 nextMove('O',X):-
-	machine(first,'O',X,X2),!,
+	machine(X,X2),!,
 		  show(X2),
 		  nextMove('X',X2).
 
@@ -332,10 +324,6 @@ diagonal_chain_2(X,board(T), 2):- append(_,[C1,C2,C3|_],T),
 % -----------------------------------------------------------------------
 
 chain_score(Player, Board, Score) :-
-	(wins(Player,Board),
-	Swin is 99999
-	; Swin is 0),
-	%show(Board),
 	findall(I1, vertical_chain(Player, Board, I1), L1),
 	somme_liste(L1, S1),
 	findall(I2, horizontal_chain(Player, Board, I2), L2),
@@ -345,8 +333,7 @@ chain_score(Player, Board, Score) :-
 	findall(I4, diagonal_chain_2(Player, Board, I4), L4),
 	somme_liste(L4, S4),
 	S is S1 + S2 + S3 + S4,
-	Score is S1 + S2 + S3 + S4+Swin.
-
+	Score is S1 + S2 + S3 + S4.
 
 eval_board(first,Player, Board, Value) :-
 	chain_score(Player, Board, Value).
@@ -372,66 +359,54 @@ best_move(Method, Player, [Move | []], Move, Value) :-
 
 best_move(Method,Player, [Move | RestMoves], BestMove, BestValue) :-
 	%trace(),
-	eval_board(Method,Player,Move, Value),
-	best_move(Method,Player, RestMoves, CurrentBestM, CurrentBestV),
-	
+	eval_board(Player,Move, Value),
+	best_move(Player, RestMoves, CurrentBestM, CurrentBestV),
 	compare_moves(Player,Move, Value, CurrentBestM, CurrentBestV, BestMove, BestValue).
 	
 
 
-minimax(_,Max, Player, [Move | []], BestMove, BestValue, CurrentDepth):-
-	full(Move),
-	BestMove = Move,
-	BestValue is 9999.
 
-minimax(_,Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
-	Max == Player,
-	wins(Player,Move),
-	BestMove = Move,
-	BestValue is -9999.
-minimax(_,Max, Player, [Move | _], BestMove, BestValue, CurrentDepth):-
-	Max\==Player,
-	wins(Player,Move),
-	BestMove = Move,
-	BestValue is 9999.
+minimax(Player, AllMoves, BestMove, BestValue, 1) :-
+	best_move(Player, AllMoves, BestMove, BestValue).
 
-
-minimax(Method,Max,Player, AllMoves, BestMove, BestValue, 1) :-
-	best_move(Method,Player, AllMoves, BestMove, BestValue).
 
 /*
-
-minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
-	wins(Player,Move),
+minimax('X', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	wins('X',Move),
 	BestMove = Move,
-	BestValue is 9999.
+	BestValue is -100000.
 	%show(Move),
 	%print('X'),
 	%writeln(' Wins !').
+minimax('O', [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	wins('O',Move),
+	BestMove = Move,
+	BestValue is 100000.
+	%show(Move),
+	%print('O'),
+	%writeln(' Wins !').
 */
-
-minimax(Method,Max, Player, [Move | []], Move, BestValue, CurrentDepth) :-
+minimax(Player, [Move | []], Move, BestValue, CurrentDepth) :-
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
-	minimax(Method,Max,Other, AllMoves, _, BestValue, NewDepth).
+	minimax(Other, AllMoves, _, BestValue, NewDepth).
 
-minimax(Method,Max, Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
-	minimax(Method,Max,Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
+minimax(Player, [Move | RestMoves], BestMove, BestValue, CurrentDepth) :-
+	minimax(Player, RestMoves, CurrentBestM, CurrentBestV, CurrentDepth),
 	change_player(Player, Other),
 	all_possible_moves(Other, Move, AllMoves),
 	NewDepth is CurrentDepth - 1,
-	minimax(Method,Max,Other, AllMoves, _, PossibleBestV, NewDepth),
-	compare_moves(Other,Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
+	minimax(Other, AllMoves, _, PossibleBestV, NewDepth),
+	compare_moves(Player,Move, PossibleBestV, CurrentBestM, CurrentBestV, BestMove, BestValue).
 
 % minimax(+Board, -BestMove)
 % Matches the next move based on the current board.
-machine(Method,Player, Board, BestMove) :-
-        all_possible_moves(Player, Board, AllMoves),
+machine(Board, BestMove) :-
+        all_possible_moves('O', Board, AllMoves),
+	minimax('O', AllMoves, BestMove, BestValue, 4),
 
-	minimax(Method,Player,Player, AllMoves, BestMove, BestValue, 2),
-
-	%writeln('Value  :'),
+	writeln('Value  :'),
 	%show(BestMove),
 	write_ln(BestValue).
 
